@@ -65,33 +65,24 @@ monitors in real time, and reports.
 
 ## Known Limits
 
-Hard constraints of the OpenCode CLI — not config options.
+Hard constraints — not config options.
 
 ### 1. No `--max-turns` flag
-Gemini CLI has no `--max-turns`. OpenCode is the same — **timeout is the only
-runaway-control lever.** A stuck run burns the full timeout before dying.
-Set timeouts conservatively and decompose tasks.
+**Timeout is the only runaway-control lever.** Set timeouts conservatively and decompose tasks.
 
-### 2. Requires `--dangerously-skip-permissions`
-OpenCode normally asks for permission on tool calls. The delegate script passes
-`--dangerously-skip-permissions` to avoid interactive prompts. This means every
-tool the model can access is auto-approved. This is safe within the task scope
-since you review the git diff afterwards.
+### 2. `--dangerously-skip-permissions`
+Passed automatically by the delegate script — all tool calls auto-approved. Review the git diff afterwards.
 
 ### 3. `--dir` flag
-OpenCode CLI accepts `--dir <path>` to set the working directory. The delegate script
-also `cd`s into the workdir before running for redundancy.
+Passed automatically by the delegate script. Sets the working directory for OpenCode.
 
-### 4. No pseudo-TTY needed (like Gemini, unlike Vibe)
-OpenCode CLI works fine in a plain pipe — no `script -q -c` wrapper needed.
+### 4. No pseudo-TTY needed
+Plain pipe — no `script -q -c` wrapper required.
 
-### 5. Free model may have queue delays
-`opencode/deepseek-v4-flash-free` has no API key cost but may experience queue
-delays during peak usage. The free model also caps at moderate usage levels.
+### 5. Free model queue delays
+`opencode/deepseek-v4-flash-free` — no API key cost; may queue during peak usage.
 
-### 6. Orchestration chain has 5 independent failure points
-The delegation pipeline is: OpenCode CLI → plain pipe → Python stream parser →
-step_finish token aggregation → git diff → JSON log. Each link can fail independently:
+### 6. Orchestration chain — 5 failure points
 
 | Link | Failure mode | Symptom |
 |------|-------------|---------|
@@ -114,11 +105,7 @@ When a run produces unexpected results, check these links top to bottom.
 
 ## Step 2 — Decompose the task
 
-**Critical rule**: OpenCode (like Vibe) works best on **atomic, focused tasks**.
-Given the timeout-based runaway control, keep tasks smaller than you might expect.
-
-**Decide whether to delegate at all:**
-`opencode-delegate` has real overhead (process start, JSON stream parser, syntax checks, git diff, JSON log). For trivial changes the setup cost exceeds the savings.
+**Critical rule**: keep tasks **atomic and focused** — one objective, one prompt.
 
 | Signal | Action |
 |--------|--------|
@@ -126,8 +113,6 @@ Given the timeout-based runaway control, keep tasks smaller than you might expec
 | 1 file, logic non-trivial OR location unclear | Delegate |
 | 2–3 files, single objective | Delegate |
 | >3 files OR multi-step logic OR migrations | Delegate, broken into sub-tasks |
-
-The sweet spot is **medium to heavy tasks**.
 
 | Size | Definition | Timeout | Approach |
 |------|-----------|---------|----------|
@@ -149,9 +134,9 @@ Sub-task 4: Verify / test (180s)
 
 ## Step 3 — Write the OpenCode prompt
 
-OpenCode has no context from the parent conversation. The prompt must be **self-contained**.
+The prompt must be **self-contained**.
 
-**Structure of a good OpenCode prompt:**
+**Structure:**
 ```
 Stack: Python/Flask, SQLAlchemy, SQLite
 Key files: app.py (routes + fetch), models.py (Entry)
@@ -171,11 +156,13 @@ VERIFY: grep for "def function_name" in file.py and confirm it exists.
 - Include a grep-based verification criterion (not a file re-read)
 - Language: English (best model performance)
 
+**Prompt adaptations:**
+- **Any task that defines or calls a specific function**: include the exact signature — `def validate(data: dict) -> tuple[bool, list[str]]:`.
+
 **Verification — always use grep, not file re-read:**
 ```
 VERIFY: grep for "def extract_labels" in app.py and confirm it exists.
 ```
-A grep is unambiguous. A file re-read can miss content outside the context window.
 
 **Examples:**
 
@@ -273,13 +260,17 @@ OpenCode tokens: 4,800  (4,600 in + 200 out)  |  ~$0.000000
 **OpenCode never commits.** All changes are left unstaged — `git checkout .` reverts everything if needed.
 
 **Red flags to act on immediately:**
-- `[WARN]` → OpenCode hit a tool error
-- `[ERROR]` → OpenCode encountered a runtime error (check auth, model availability)
-- `exit: 1` or non-zero → OpenCode failed
-- No `[edit]` after 60s → looping, task too vague, or model queue delay
-- `=== SYNTAX ERRORS ===` → **fix before committing**
-- `=== OPENCODE TIMEOUT ===` → check what was done before retrying
-- Same file read 5+ times → OpenCode is circling; run likely lost
+
+| Flag | Meaning | Action |
+|------|---------|--------|
+| `[WARN]` | Tool error | Read the error, fix manually |
+| `[ERROR]` | Runtime error | Check auth, model availability |
+| `exit: 1` or non-zero | OpenCode failed | Read diff, correct prompt |
+| No `[edit]` after 60s | Looping or queue delay | Abort if persists |
+| exit 0 + no `[edit]` events | `WROTE_NOTHING` — OpenCode ran but wrote nothing | Do not compensate — fix prompt and relaunch |
+| `=== SYNTAX ERRORS ===` | Post-run syntax check failed | **Fix before committing** |
+| `=== OPENCODE TIMEOUT ===` | Timed out | Check what was done before retrying |
+| Same file read 5+ times | OpenCode is circling — run likely lost | Abort, check diff, try again |
 
 **Common issues and workarounds:**
 
@@ -343,11 +334,11 @@ Ready to commit?
 
 ## Orchestration rules
 
-- **Decompose before delegating** — one giant prompt + no max-turns = guaranteed timeout.
+- **Decompose before delegating** — one task, one prompt.
 - **Check diff between sub-tasks** — never launch the next step blind.
 - **Don't code in OpenCode's place** unless OpenCode did ≥50% and timed out.
-- **Timeout is the only turn limit** — set it conservatively; decompose rather than extending.
-- **VERIFY with grep, not re-read** — `grep -n "def foo" file.py` is unambiguous.
+- **Timeout is the only turn limit** — decompose rather than extending.
+- **VERIFY with grep, not re-read** — `grep -n "def foo" file.py`.
 
 ---
 
