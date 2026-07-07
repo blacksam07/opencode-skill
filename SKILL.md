@@ -8,9 +8,9 @@ description: >
 license: MIT
 user-invocable: true
 allowed-tools:
-  - bash
-  - read_file
-  - grep
+  - Bash
+  - Read
+  - Grep
 ---
 
 ## /opencodeon | /opencodeoff | /opencodestatus
