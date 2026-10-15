@@ -34,7 +34,7 @@ When you type `/opencode <instruction>` in Claude Code, this skill:
 ## Installation
 
 ```bash
-git clone https://github.com/pcx-wave/opencode-skill.git && cd opencode-skill && mkdir -p ~/tools ~/.claude/skills/opencode ~/.claude/skills/opencodeon ~/.claude/skills/opencodeoff ~/.claude/skills/opencodestatus ~/.claude/skills/opencode-model-pick ~/.claude/skills/opencode-model-clear && ln -sf "$(pwd)/tools/opencode-delegate" ~/tools/opencode-delegate && ln -sf "$(pwd)/tools/delegate-report" ~/tools/delegate-report && chmod +x ~/tools/opencode-delegate ~/tools/delegate-report && ln -sf "$(pwd)/SKILL.md" ~/.claude/skills/opencode/SKILL.md && ln -sf "$(pwd)/OPENCODEON.md" ~/.claude/skills/opencodeon/SKILL.md && ln -sf "$(pwd)/OPENCODEOFF.md" ~/.claude/skills/opencodeoff/SKILL.md && ln -sf "$(pwd)/OPENCODESTATUS.md" ~/.claude/skills/opencodestatus/SKILL.md && ln -sf "$(pwd)/OPENCODEMODELPICK.md" ~/.claude/skills/opencode-model-pick/SKILL.md && ln -sf "$(pwd)/OPENCODEMODELCLEAR.md" ~/.claude/skills/opencode-model-clear/SKILL.md
+git clone https://github.com/blacksam07/opencode-skill.git && cd opencode-skill && mkdir -p ~/tools ~/.claude/skills/opencode ~/.claude/skills/opencodeon ~/.claude/skills/opencodeoff ~/.claude/skills/opencodestatus ~/.claude/skills/opencode-model-pick ~/.claude/skills/opencode-model-clear && ln -sf "$(pwd)/tools/opencode-delegate" ~/tools/opencode-delegate && ln -sf "$(pwd)/tools/delegate-report" ~/tools/delegate-report && chmod +x ~/tools/opencode-delegate ~/tools/delegate-report && ln -sf "$(pwd)/SKILL.md" ~/.claude/skills/opencode/SKILL.md && ln -sf "$(pwd)/OPENCODEON.md" ~/.claude/skills/opencodeon/SKILL.md && ln -sf "$(pwd)/OPENCODEOFF.md" ~/.claude/skills/opencodeoff/SKILL.md && ln -sf "$(pwd)/OPENCODESTATUS.md" ~/.claude/skills/opencodestatus/SKILL.md && ln -sf "$(pwd)/OPENCODEMODELPICK.md" ~/.claude/skills/opencode-model-pick/SKILL.md && ln -sf "$(pwd)/OPENCODEMODELCLEAR.md" ~/.claude/skills/opencode-model-clear/SKILL.md
 ```
 
 ### Step-by-step
@@ -167,8 +167,11 @@ OpenCode's internal tool calls consume **OpenCode tokens**, not Claude tokens.
 Claude only receives the compressed final output (~200-800 tokens/run).
 
 **Pricing depends on the model used:**
-- `opencode/deepseek-v4-flash-free` — **free**, no API key needed (may have queue delays)
-- `google/gemini-2.5-flash` — requires `GOOGLE_GENERATIVE_AI_API_KEY` env var
+- `opencode/mimo-v2.6-flash-free` — **free**, no API key needed (may have queue delays)
+- `opencode-go/*` — billed to your OpenCode Go credits
+- `github-copilot/*` / `openai/*` — uses your existing Copilot / OpenAI auth
+
+List all models with `opencode models`.
 
 Real token counts and cost are printed after every run and appended to the run log.
 

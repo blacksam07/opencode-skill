@@ -80,7 +80,7 @@ Passed automatically by the delegate script. Sets the working directory for Open
 Plain pipe — no `script -q -c` wrapper required.
 
 ### 5. Free model queue delays
-`opencode/deepseek-v4-flash-free` — no API key cost; may queue during peak usage.
+`opencode/mimo-v2.6-flash-free` — no API key cost; may queue during peak usage.
 
 ### 6. Orchestration chain — 5 failure points
 
@@ -199,7 +199,7 @@ VERIFY: grep for "datetime.date" in app.py and confirm it exists.
 | `workdir`      | —       | Absolute path, must exist |
 | `prompt`       | —       | Self-contained task description |
 | `timeout-secs` | `300`   | Wall-clock kill timer |
-| `model`        | `opencode/deepseek-v4-flash-free` | OpenCode model string |
+| `model`        | `opencode/mimo-v2.6-flash-free` | OpenCode model string |
 
 **Recommended timeouts:**
 - Explore only: `120`
@@ -207,8 +207,21 @@ VERIFY: grep for "datetime.date" in app.py and confirm it exists.
 - Medium change (2–3 files): `300`
 
 **Model selection:**
-- `opencode/deepseek-v4-flash-free` (default) — free, no API key needed, may have queue delays
-- `google/gemini-2.5-flash` — cheap, fast (requires `GOOGLE_GENERATIVE_AI_API_KEY`)
+
+List everything available with `opencode models`. Bare names (e.g. `exo-free`) are
+auto-prefixed to `opencode/`. The delegate script validates the name before launch.
+
+| Provider | Examples | Cost / auth |
+|----------|----------|-------------|
+| `opencode/*-free` | `opencode/mimo-v2.6-flash-free` (default), `opencode/ling-3.1-flash-free`, `opencode/step-5-preview-free`, `opencode/space-bunny-free` | **Free**, no API key; may queue, occasional upstream 429/503 |
+| `opencode-go/*` | `opencode-go/glm-5.3-flash`, `opencode-go/kimi-k2.7-code`, `opencode-go/qwen3.8-flash`, `opencode-go/claude-haiku-5-5` | Billed to OpenCode Go credit (`opencode auth`) |
+| `github-copilot/*` | `github-copilot/claude-sonnet-5.5`, `github-copilot/gpt-5.6-luna` | Requires Copilot subscription (already authed) |
+| `openai/*` | `openai/gpt-5.6-luna` | Requires OpenAI auth; some Codex models are ChatGPT-account-only |
+
+Notes:
+- `opencode-go/*-deepseek*` may fail with "requires Global regions" — workspace Privacy setting must be Global.
+- `openai/gpt-5.4-mini` and other Codex models fail on ChatGPT (non-API) accounts — pick another.
+- If a run exits 1 with `[ERROR] Upstream request failed`, the model endpoint is down/queue-limited — retry or switch model, not a script bug.
 
 **Examples:**
 ```bash
@@ -228,7 +241,7 @@ The script prints live:
 ```
 === OPENCODE START ===
 Workdir : /path/to/project
-Model   : opencode/deepseek-v4-flash-free
+Model   : opencode/mimo-v2.6-flash-free
 Timeout : 300s
 Prompt  : Stack: Python/Flask. File: app.py ...
 ======================
